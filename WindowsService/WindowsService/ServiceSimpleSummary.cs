@@ -1,6 +1,5 @@
 ﻿using System.ServiceProcess;
-using WindowsService.WindowsService.Functions;
-using WinSettingManager.Functions;
+using WindowsService.Functions;
 
 namespace WindowsService.WindowsService
 {

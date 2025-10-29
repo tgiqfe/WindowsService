@@ -5,7 +5,7 @@ using System.Management;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
-using WindowsService.WindowsService.Functions;
+using WindowsService.Functions;
 
 namespace WindowsService.WindowsService
 {

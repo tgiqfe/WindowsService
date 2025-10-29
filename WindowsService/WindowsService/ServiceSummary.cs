@@ -1,6 +1,6 @@
 ﻿using System.Management;
 using System.ServiceProcess;
-using WindowsService.WindowsService.Functions;
+using WindowsService.Functions;
 
 namespace WindowsService.WindowsService
 {
