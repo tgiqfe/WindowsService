@@ -1,42 +1,46 @@
-﻿using System.Management;
-using System.ServiceProcess;
+﻿using System.ServiceProcess;
 using WindowsService.Functions;
 
 namespace WindowsService.WindowsService
 {
-    public class ServiceSummary : BaseServiceSummary
+    public class ServiceSummary
     {
         public string Name { get; set; }
         public string DisplayName { get; set; }
-        public ServiceControllerStatus Status { get; set; }
-        public ServiceStartMode StartupType { get; set; }
-        public bool TriggerStart { get; set; }
-        public bool DelayedAutoStart { get; set; }
-        public string ExecutePath { get; set; }
-        public string Description { get; set; }
-        public string LogonName { get; set; }
-        public long ProcessId { get; set; }
-
-        public ServiceSummary(ServiceController sc, ManagementObject mo = null)
+        public string Status { get; set; }
+        public string StartupType { get; set; }
+        
+        public ServiceSummary(ServiceController sc)
         {
-            _sc = sc;
-            _mo = mo ?? new ManagementClass("Win32_Service").
-                GetInstances().
-                OfType<ManagementObject>().
-                FirstOrDefault(x => sc.ServiceName == x["Name"] as string);
-
             this.Name = sc.ServiceName;
             this.DisplayName = sc.DisplayName;
-            this.Status = sc.Status;
-            this.StartupType = sc.StartType;
-            this.TriggerStart = IsTriggeredStart();
-            this.TriggerStart = IsDelayedAutoStart();
-            if (mo != null)
+            this.Status = sc.Status switch
             {
-                this.ExecutePath = mo["PathName"] as string;
-                this.Description = mo["Description"] as string;
-                this.LogonName = mo["StartName"] as string;
-                this.ProcessId = (uint)mo["ProcessId"];
+                ServiceControllerStatus.Running => "実行中",
+                ServiceControllerStatus.Stopped => "停止",
+                ServiceControllerStatus.Paused => "一時中断",
+                ServiceControllerStatus.StartPending => "開始中",
+                ServiceControllerStatus.StopPending => "停止中",
+                ServiceControllerStatus.PausePending => "一時中断保留中",
+                ServiceControllerStatus.ContinuePending => "継続保留中",
+                _ => "不明"
+            };
+            this.StartupType = sc.StartType switch
+            {
+                ServiceStartMode.Automatic => "自動",
+                ServiceStartMode.Manual => "手動",
+                ServiceStartMode.Disabled => "無効",
+                _ => "不明"
+            };
+
+            var delay = StartupChecker.IsDelayedAutoStart(sc);
+            var trigger = StartupChecker.IsTriggeredStart(sc);
+            if (delay || trigger)
+            {
+                List<string> list = new();
+                if (delay) list.Add("遅延自動");
+                if (trigger) list.Add("トリガー開始");
+                this.StartupType += " (" + string.Join(",", list) + ")";
             }
         }
 
@@ -61,13 +65,8 @@ namespace WindowsService.WindowsService
                         x.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase) ||
                         x.DisplayName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
             }
-            var wmi_services = new ManagementClass("Win32_Service").
-                GetInstances().
-                OfType<ManagementObject>();
 
-            return services.
-                Select(sc => new ServiceSummary(sc, wmi_services.FirstOrDefault(mo => sc.ServiceName == mo["Name"] as string))).
-                ToArray();
+            return services.Select(x => new ServiceSummary(x)).ToArray();
         }
     }
 }

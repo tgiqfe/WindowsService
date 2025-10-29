@@ -2,8 +2,8 @@
 using System.Text.Json;
 using WindowsService.WindowsService;
 
-var summaries = ServiceSummary.Load();
-var simpleSummaries = ServiceSimpleSummary.Load();
+var summaries = ServiceItem.Load();
+var simpleSummaries = ServiceSummary.Load();
 
 var json1 = JsonSerializer.Serialize(summaries,
     new JsonSerializerOptions
