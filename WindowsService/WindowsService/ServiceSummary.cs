@@ -5,11 +5,17 @@ namespace WindowsService.WindowsService
 {
     public class ServiceSummary
     {
+        #region Public parameter
+
         public string Name { get; set; }
         public string DisplayName { get; set; }
         public string Status { get; set; }
         public string StartupType { get; set; }
-        
+
+        #endregion
+
+        const string _log_target = "ServiceSummary";
+
         public ServiceSummary(ServiceController sc)
         {
             this.Name = sc.ServiceName;
@@ -46,25 +52,12 @@ namespace WindowsService.WindowsService
 
         public static ServiceSummary[] Load(string serviceName = null)
         {
-            IEnumerable<ServiceController> services = null;
-            if (serviceName == null)
-            {
-                services = ServiceController.GetServices();
-            }
-            else if (serviceName.Contains("*") || serviceName.Contains("?"))
-            {
-                var regPattern = TextFunctions.WildcardMatch(serviceName);
-                services = ServiceController.GetServices().
-                    Where(x =>
-                        regPattern.IsMatch(x.ServiceName) || regPattern.IsMatch(x.DisplayName));
-            }
-            else
-            {
-                services = ServiceController.GetServices().
+            var services = serviceName == null ?
+                ServiceController.GetServices() :
+                ServiceController.GetServices().
                     Where(x =>
                         x.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase) ||
                         x.DisplayName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
-            }
 
             return services.Select(x => new ServiceSummary(x)).ToArray();
         }
