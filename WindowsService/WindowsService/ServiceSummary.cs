@@ -3,6 +3,9 @@ using WindowsService.Functions;
 
 namespace WindowsService.WindowsService
 {
+    /// <summary>
+    /// Service info (Simple
+    /// </summary>
     public class ServiceSummary
     {
         #region Public parameter

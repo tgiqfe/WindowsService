@@ -4,6 +4,9 @@ using System.ServiceProcess;
 
 namespace WindowsService.WindowsService
 {
+    /// <summary>
+    /// Service info (Detailed)
+    /// </summary>
     public class ServiceItem
     {
         #region Public parameter
@@ -62,39 +65,160 @@ namespace WindowsService.WindowsService
                 ToArray();
         }
 
-        public static bool Exists(string name)
+        public static bool Exists(string serviceName)
         {
-            Logger.WriteLine("Info", $"Checking existence of {_log_target}: {name}");
+            Logger.WriteLine("Info", $"Checking existence of {_log_target}: {serviceName}");
 
             //  Check by loading the service
 
             return false;
         }
 
+        /// <summary>
+        /// Service start. instance method.
+        /// </summary>
+        /// <returns></returns>
         public bool ToStart()
         {
-            Logger.WriteLine("Info", $"Starting {_log_target}: {this.Name}");
+            return ToStart(this.Name);
+        }
 
-            //  Start the service
-
+        /// <summary>
+        /// Service start. static method.
+        /// </summary>
+        /// <param name="serviceName"></param>
+        /// <returns></returns>
+        public static bool ToStart(string serviceName)
+        {
+            Logger.WriteLine("Info", $"Starting {_log_target}: {serviceName}");
+            try
+            {
+                var sc = ServiceController.GetServices().
+                    FirstOrDefault(x =>
+                        x.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase) ||
+                        x.DisplayName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
+                if (sc.Status == ServiceControllerStatus.Paused && sc.CanPauseAndContinue)
+                {
+                    sc.Continue();
+                    Logger.WriteLine("Info", $"Service {serviceName} continued from paused state.");
+                    return true;
+                }
+                else if (sc.Status == ServiceControllerStatus.Stopped)
+                {
+                    sc.Start();
+                    Logger.WriteLine("Info", $"Service {serviceName} started.");
+                    return true;
+                }
+                else
+                {
+                    Logger.WriteLine("Warning", $"Service {serviceName} is already running or in a state that cannot be started.");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.WriteLine("Error", $"Failed to start service {serviceName}: {e.ToString()}");
+                Logger.WriteRaw(e.Message);
+            }
             return false;
         }
 
+        /// <summary>
+        /// Service stop. instance method.
+        /// </summary>
+        /// <returns></returns>
         public bool ToStop()
         {
-            Logger.WriteLine("Info", $"Stopping {_log_target}: {this.Name}");
+            return ToStop(this.Name);
+        }
 
-            //  Stop the service
-
+        /// <summary>
+        /// Service stop. static method.
+        /// </summary>
+        /// <param name="serviceName"></param>
+        /// <returns></returns>
+        public static bool ToStop(string serviceName)
+        {
+            Logger.WriteLine("Info", $"Stopping {_log_target}: {serviceName}");
+            try
+            {
+                var sc = ServiceController.GetServices().
+                    FirstOrDefault(x =>
+                        x.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase) ||
+                        x.DisplayName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
+                if (sc.Status == ServiceControllerStatus.Running && sc.CanStop)
+                {
+                    sc.Stop();
+                    return true;
+                }
+                else if (sc.Status == ServiceControllerStatus.Paused && sc.CanPauseAndContinue)
+                {
+                    sc.Continue();
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
+                    sc.Stop();
+                    return true;
+                }
+                else
+                {
+                    Logger.WriteLine("Warning", $"Service {serviceName} is already stopped or in a state that cannot be stopped.");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.WriteLine("Error", $"Failed to stop service {serviceName}: {e.ToString()}");
+                Logger.WriteRaw(e.Message);
+            }
             return false;
         }
 
+        /// <summary>
+        /// Service restart. instance method.
+        /// </summary>
+        /// <returns></returns>
         public bool ToRestart()
         {
-            Logger.WriteLine("Info", $"Restarting {_log_target}: {this.Name}");
+            return ToRestart(this.Name);
+        }
 
-            //  Restart the service
-
+        /// <summary>
+        /// Service restart. static method.
+        /// </summary>
+        /// <param name="serviceName"></param>
+        /// <returns></returns>
+        public static bool ToRestart(string serviceName)
+        {
+            Logger.WriteLine("Info", $"Restarting {_log_target}: {serviceName}");
+            try
+            {
+                var sc = ServiceController.GetServices().
+                    FirstOrDefault(x =>
+                        x.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase) ||
+                        x.DisplayName.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
+                if (sc.Status == ServiceControllerStatus.Running && sc.CanStop)
+                {
+                    sc.Stop();
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(10));
+                    sc.Start();
+                    return true;
+                }
+                else if (sc.Status == ServiceControllerStatus.Paused && sc.CanPauseAndContinue)
+                {
+                    sc.Continue();
+                    sc.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
+                    sc.Stop();
+                    sc.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromSeconds(10));
+                    sc.Start();
+                    return true;
+                }
+                else
+                {
+                    Logger.WriteLine("Info", $"Service {serviceName} is not ReStarting the service.");
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.WriteLine("Error", $"Failed to restart service {serviceName}: {e.ToString()}");
+                Logger.WriteRaw(e.Message);
+            }
             return false;
         }
 
