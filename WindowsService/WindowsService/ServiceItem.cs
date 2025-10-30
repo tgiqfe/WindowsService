@@ -26,6 +26,14 @@ namespace WindowsService.WindowsService
 
         const string _log_target = "ServiceItem";
 
+        public ServiceItem(string serviceName)
+            : this(ServiceController.GetServices().
+                  FirstOrDefault(x =>
+                      x.ServiceName.Equals(serviceName, StringComparison.OrdinalIgnoreCase) ||
+                      x.DisplayName.Equals(serviceName, StringComparison.OrdinalIgnoreCase)))
+        {
+        }
+
         public ServiceItem(ServiceController sc, ManagementObject mo = null)
         {
             mo ??= new ManagementClass("Win32_Service").
@@ -222,13 +230,21 @@ namespace WindowsService.WindowsService
             return false;
         }
 
-        public bool ChangeStartupType(string mode)
+        public bool ChangeStartupType(ServiceStartMode mode)
         {
             Logger.WriteLine("Info", $"Changing startup type of {_log_target}: {this.Name} to {mode}");
+            var sc = ServiceController.GetServices().
+                FirstOrDefault(x =>
+                    x.ServiceName.Equals(this.Name, StringComparison.OrdinalIgnoreCase) ||
+                    x.DisplayName.Equals(this.Name, StringComparison.OrdinalIgnoreCase));
+            var wmi = new ManagementClass("Win32_Service").
+                GetInstances().
+                OfType<ManagementObject>().
+                FirstOrDefault(x => sc.ServiceName == x["Name"] as string);
 
-            //  Change the startup type of the service
-
-            return false;
+            var ret = (uint)wmi.InvokeMethod("ChangeStartMode", new object[] { mode.ToString() });
+            Logger.WriteLine("Info", $"ChangeStartMode returned: {ret}");
+            return ret == 0;
         }
     }
 }

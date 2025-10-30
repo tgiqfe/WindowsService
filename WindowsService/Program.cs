@@ -1,7 +1,9 @@
 ﻿
+using System.ServiceProcess;
 using System.Text.Json;
 using WindowsService.WindowsService;
 
+/*
 var summaries = ServiceItem.Load();
 var simpleSummaries = ServiceSummary.Load();
 
@@ -20,5 +22,10 @@ var json2 = JsonSerializer.Serialize(simpleSummaries,
 
 Console.WriteLine(json1);
 Console.WriteLine(json2);
+*/
+
+var item = new ServiceItem("Fax");
+item.ChangeStartupType(ServiceStartMode.Disabled);
+
 
 Console.ReadLine();
