@@ -1,7 +1,6 @@
 ﻿using ItemStorageManager.ItemStorage;
 using System.Management;
 using System.ServiceProcess;
-using WindowsService.Functions;
 
 namespace WindowsService.WindowsService
 {
